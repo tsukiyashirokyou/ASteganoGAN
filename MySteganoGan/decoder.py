@@ -70,7 +70,7 @@ class DenseDecoder(BasicDecoder):
         # self.conv3 = self._residual_block(self.hiddenSize*2,self.hiddenSize)
         # self.conv4 = self._residual_block(self.hiddenSize*3,self.hiddenSize)
         self.conv5 = nn.Sequential(
-            self._conv2d(self.hiddenSize * 3, self.dataDepth)
+            self._conv2d(self.hiddenSize * 4, self.dataDepth)
         )
         return [self.conv1, self.conv2, self.conv3, self.conv4,self.conv5]
 

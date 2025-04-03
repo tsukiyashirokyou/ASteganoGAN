@@ -99,4 +99,4 @@ class DenseEncoder(BasicEncoder):
             self._conv2d(self.hiddenSize*4+self.dataDepth, 3)
         )
 
-        return self.conv1, self.conv2, self.conv3, self.conv4,self.conv5
+        return [self.conv1, self.conv2, self.conv3, self.conv4,self.conv5]

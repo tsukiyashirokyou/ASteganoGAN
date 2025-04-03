@@ -35,6 +35,7 @@ class BasicCritic(nn.Module):
             self._residual_block(3,self.hiddenSize),
             self._residual_block(self.hiddenSize,self.hiddenSize),
             self._residual_block(self.hiddenSize,self.hiddenSize),
+            self._residual_block(self.hiddenSize, self.hiddenSize),
             # spectral_norm(self._conv2d(self.hiddenSize, 1))
             self._conv2d(self.hiddenSize, 1)
         )
