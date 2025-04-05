@@ -10,19 +10,26 @@ from MySteganoGan.encoder import BasicEncoder, DenseEncoder, ResidualEncoder
 from MySteganoGan.myDataLoader import DataLoader
 
 
-def trainSteganoGAN():
+def trainSteganoGAN(model='DenseEncoder',dataDepth=6):
+
+    model_dict = {
+        'DenseEncoder': DenseEncoder,
+        'ResidualEncoder': ResidualEncoder,
+        'BasicCritic': BasicCritic,
+    }
+
     #------基本参数
     torch.manual_seed(42)
     timestamp = int(time())
 
     dataPath = Path(__file__).resolve().parent.parent / 'data'
-    logDir = Path(__file__).resolve().parent.parent / 'logs' / "models" / str(timestamp)
+    logDir = Path(__file__).resolve().parent.parent / 'logs' / "models" / (model+str(dataDepth)+"_"+str(timestamp))
     jsonDir = logDir / "config.json"
     weightsDir = logDir / "weights.steg"
 
 
-    dataDepth = 6
-    encoder = DenseEncoder
+    dataDepth = dataDepth
+    encoder = model_dict[model]
     # encoder = ResidualEncoder
     # encoder = BasicEncoder
     hiddenSize = 32
@@ -48,13 +55,14 @@ def trainSteganoGAN():
 
     #------模型
     try:
-        steganogan = SteganoGAN.load(modelArgsDic=modelArgsDic)
+        steganogan = SteganoGAN.load(path=logDir,modelArgsDic=modelArgsDic)
     except ValueError:
         steganogan = SteganoGAN(modelArgsDic=modelArgsDic,**modelArgsDic)
 
     with jsonDir.open('wt') as fout:
         fout.write(json.dumps(modelArgsDic, indent=2, default=lambda o: str(o)))
 
+    print('现在训练的模型是:'+model+str(dataDepth))
     steganogan.fit(train, validation, epochs=modelArgsDic['epochs'])
 
     steganogan.save(weightsDir)

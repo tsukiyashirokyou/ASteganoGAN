@@ -119,6 +119,8 @@ class SteganoGAN(object):
         _encDecParamList = list(self.decoder.parameters()) + list(self.encoder.parameters())
         criticOptimizer = Lion(self.critic.parameters(), lr=self.__init__lr,weight_decay=0.03)
         decoderOptimizer = Lion(_encDecParamList, lr=self.__init__lr,weight_decay=0.03)
+        # criticOptimizer = AdamW(self.critic.parameters(), lr=self.__init__lr)
+        # decoderOptimizer = AdamW(_encDecParamList, lr=self.__init__lr)
         self.update_fn = criticOptimizer.update_fn
         return criticOptimizer, decoderOptimizer
 
@@ -133,9 +135,11 @@ class SteganoGAN(object):
             generatedScore = self._critic(generated)
 
             self.criticOptimizer.zero_grad()
+
             (coverImagesScore - generatedScore).backward(retain_graph=False)
             clip_grad_norm_(self.critic.parameters(), max_norm=0.25)#梯度裁剪
             self.criticOptimizer.step()
+
             apply_weight_clipping(self.critic)#权重限制
 
 
@@ -214,36 +218,37 @@ class SteganoGAN(object):
 
 #------比较最好模型
     def bestModelEvalution(self,metricsBest):
-        if metricsBest['val.ssim']<0.9 and self.fitMetrics['val.ssim']<0.9:
-            return (metricsBest['val.ssim']*2+metricsBest['val.bpp'] <
-                    self.fitMetrics['val.ssim']*2+self.fitMetrics['val.bpp'])
-        elif metricsBest['val.ssim']<0.9 and self.fitMetrics['val.ssim']>=0.9:
-            return True
-        elif metricsBest['val.ssim']>=0.9 and self.fitMetrics['val.ssim']<0.9:
-            return False
-        else:
-            return metricsBest['val.bpp'] < self.fitMetrics['val.bpp']
-        
+        # if metricsBest['val.ssim']<0.9 and self.fitMetrics['val.ssim']<0.9:
+        #     return (metricsBest['val.ssim']*2+metricsBest['val.bpp'] <
+        #             self.fitMetrics['val.ssim']*2+self.fitMetrics['val.bpp'])
+        # elif metricsBest['val.ssim']<0.9 and self.fitMetrics['val.ssim']>=0.9:
+        #     return True
+        # elif metricsBest['val.ssim']>=0.9 and self.fitMetrics['val.ssim']<0.9:
+        #     return False
+        # else:
+        #     return metricsBest['val.bpp'] < self.fitMetrics['val.bpp']
+        return (metricsBest['val.ssim'] * 2 + metricsBest['val.bpp'] <
+                self.fitMetrics['val.ssim'] * 2 + self.fitMetrics['val.bpp'])
 #------SteganoGan训练
     def fit(self, train, validate, epochs=5):
 
         #------尝试载入过去最好的模型
         bestModelExists = False
         try:
-            bestModel = self.load(modelArgsDic=self.modelArgsDic,details=False)
+            bestModel = self.load(path=self.logDir,modelArgsDic=self.modelArgsDic,details=False)
             bestModelExists = True
         except ValueError:
             pass
 
 
         if self.criticOptimizer is None:
-            self.criticOptimizer, self.decoderOptimizer = self._getOptimizers()
+            self.criticOptimizer, self.decoderOptimizer= self._getOptimizers()
             self.epochs = 0
 
         if self.logDir:
             sampleCoverImages = next(iter(validate))[0]
 
-        total = self.epochs + epochs #total为总训练轮数，epochs为本次训练需要训练的轮数
+        self.total = self.epochs + epochs #total为总训练轮数，epochs为本次训练需要训练的轮数
 
         flag = False
         for epoch in range(1, epochs + 1):
@@ -251,7 +256,7 @@ class SteganoGAN(object):
 
             metrics = {metric: list() for metric in METRIC_FIELDS}
 
-            print('Epoch {}/{}'.format(self.epochs, total))
+            print('Epoch {}/{}'.format(self.epochs, self.total))
 
             self._fitCritic(train, metrics)
             self._fitEncAndDec(train, metrics)
@@ -281,12 +286,11 @@ class SteganoGAN(object):
                         print(not bestModelExists, self.bestModelEvalution(metricsBest=bestModel.history[-1]))
                     else:
                         flag = True
-                    rootPath = Path(__file__).parent.parent
 
-                    self.save(rootPath / 'bestModel.pth')#保存当前模型
-                    bestModel = self.load(modelArgsDic=self.modelArgsDic,details=False)
+                    self.save(self.logDir / 'bestModel.pth')#保存当前模型
+                    bestModel = self.load(path=self.logDir,modelArgsDic=self.modelArgsDic,details=False)
 
-                    with (rootPath / 'bestMetrics.log').open('w') as bestMetricsFile:
+                    with (self.logDir / 'bestMetrics.log').open('w') as bestMetricsFile:
                         json.dump(bestModel.history[-1], bestMetricsFile, indent=4)
 
                     bestModelExists = True
@@ -389,7 +393,8 @@ class SteganoGAN(object):
 
         if path == None:
             path = Path(__file__).parent.parent / 'bestModel.pth'
-
+        else:
+            path = Path(path) / 'bestModel.pth'
         if path.exists():
             steganogan = torch.load(path, map_location='cpu',weights_only=False)
 
@@ -399,6 +404,8 @@ class SteganoGAN(object):
             steganogan.setDevice(cuda,details=details)
             steganogan.optimizerTo(steganogan.criticOptimizer,steganogan.device)
             steganogan.optimizerTo(steganogan.decoderOptimizer,steganogan.device)
+            # steganogan.optimizerTo(steganogan.criticOptimizer_adamw,steganogan.device)
+            # steganogan.optimizerTo(steganogan.decoderOptimizer_adamw,steganogan.device)
             return steganogan
         else:
             raise ValueError('path not found.')
