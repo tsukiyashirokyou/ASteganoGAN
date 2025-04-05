@@ -15,7 +15,7 @@ def trainSteganoGAN(model='DenseEncoder',dataDepth=6):
     model_dict = {
         'DenseEncoder': DenseEncoder,
         'ResidualEncoder': ResidualEncoder,
-        'BasicCritic': BasicCritic,
+        'BasicEncoder': BasicEncoder,
     }
 
     #------基本参数

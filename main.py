@@ -2,27 +2,15 @@ from MySteganoGan import train
 from pathlib import  Path
 import torch
 def main():
-    # tran_list = [
-    #     {
-    #         'model':'DenseEncoder',
-    #         'dataDepth':6
-    #     },
-    #     {
-    #         'model':'ResidualEncoder',
-    #         'dataDepth':6
-    #     },
-    #     {
-    #         'model':'BasicEncoder',
-    #         'dataDepth':6
-    #     }
-    # ]
+    # model_list = ['DenseEncoder','ResidualEncoder','BasicEncoder']
+    model_list = ['ResidualEncoder','BasicEncoder']
+    dataDepth_list = [4,5]
     tran_list = [
-        {
-            # 'model':'ResidualEncoder',
-            'model':'DenseEncoder',
-            'dataDepth':6
-        }
+        {'model': x ,'dataDepth': y}
+        for x in model_list
+        for y in dataDepth_list
     ]
+
     for i in range(len(tran_list)):
         train.trainSteganoGAN(**tran_list[i])
 
