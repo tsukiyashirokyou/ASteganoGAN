@@ -30,8 +30,6 @@ def trainSteganoGAN(model='DenseEncoder',dataDepth=6):
 
     dataDepth = dataDepth
     encoder = model_dict[model]
-    # encoder = ResidualEncoder
-    # encoder = BasicEncoder
     hiddenSize = 32
     epochs = 32
 
