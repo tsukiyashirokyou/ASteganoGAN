@@ -218,15 +218,6 @@ class SteganoGAN(object):
 
 #------比较最好模型
     def bestModelEvalution(self,metricsBest):
-        # if metricsBest['val.ssim']<0.9 and self.fitMetrics['val.ssim']<0.9:
-        #     return (metricsBest['val.ssim']*2+metricsBest['val.bpp'] <
-        #             self.fitMetrics['val.ssim']*2+self.fitMetrics['val.bpp'])
-        # elif metricsBest['val.ssim']<0.9 and self.fitMetrics['val.ssim']>=0.9:
-        #     return True
-        # elif metricsBest['val.ssim']>=0.9 and self.fitMetrics['val.ssim']<0.9:
-        #     return False
-        # else:
-        #     return metricsBest['val.bpp'] < self.fitMetrics['val.bpp']
         return (metricsBest['val.ssim'] * 2 + metricsBest['val.bpp'] <
                 self.fitMetrics['val.ssim'] * 2 + self.fitMetrics['val.bpp'])
 #------SteganoGan训练
@@ -404,8 +395,6 @@ class SteganoGAN(object):
             steganogan.setDevice(cuda,details=details)
             steganogan.optimizerTo(steganogan.criticOptimizer,steganogan.device)
             steganogan.optimizerTo(steganogan.decoderOptimizer,steganogan.device)
-            # steganogan.optimizerTo(steganogan.criticOptimizer_adamw,steganogan.device)
-            # steganogan.optimizerTo(steganogan.decoderOptimizer_adamw,steganogan.device)
             return steganogan
         else:
             raise ValueError('path not found.')

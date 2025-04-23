@@ -12,12 +12,12 @@ def main():
     tran_list = [
         {
             'model':'DenseEncoder',
-            'dataDepth':5
+            'dataDepth':6
         },
-        {
-            'model': 'BasicEncoder',
-            'dataDepth': 6
-        }
+        # {
+        #     'model': 'BasicEncoder',
+        #     'dataDepth': 6
+        # }
     ]
 
     for i in range(len(tran_list)):

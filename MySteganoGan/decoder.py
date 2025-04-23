@@ -2,8 +2,7 @@ from MySteganoGan.attention import *
 from MySteganoGan.activation_funtion import *
 import torch.nn as nn
 from MySteganoGan.residual_block import ResidualBlock
-from torch.nn.functional import celu
-from torch.nn.utils import spectral_norm
+
 
 class BasicDecoder(nn.Module):
 #------卷积模块
@@ -28,10 +27,6 @@ class BasicDecoder(nn.Module):
 #------构建模型
     def _buildModels(self):
         self.layers = nn.Sequential(
-            # self._conv2dBlock(),
-            # self._conv2dBlock(self.hiddenSize),
-            # self._conv2dBlock(self.hiddenSize),
-            # self._conv2dBlock(self.hiddenSize),
             self._residual_block(3,self.hiddenSize),
             self._residual_block(self.hiddenSize,self.hiddenSize),
             self._residual_block(self.hiddenSize,self.hiddenSize),
@@ -65,10 +60,6 @@ class DenseDecoder(BasicDecoder):
         self.conv2 = self._conv2dBlock(self.hiddenSize)
         self.conv3 = self._conv2dBlock(self.hiddenSize*2)
         self.conv4 = self._conv2dBlock(self.hiddenSize*3)
-        # self.conv1 = self._residual_block(3,self.hiddenSize)
-        # self.conv2 = self._residual_block(self.hiddenSize,self.hiddenSize)
-        # self.conv3 = self._residual_block(self.hiddenSize*2,self.hiddenSize)
-        # self.conv4 = self._residual_block(self.hiddenSize*3,self.hiddenSize)
         self.conv5 = nn.Sequential(
             self._conv2d(self.hiddenSize * 4, self.dataDepth)
         )

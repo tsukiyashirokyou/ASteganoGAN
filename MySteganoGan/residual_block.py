@@ -20,5 +20,4 @@ class ResidualBlock(nn.Module):
             self.shortcut = nn.Identity()
 
     def forward(self, x):
-        # return celu(self.shortcut(x) + self.conv_block(x))
         return self.shortcut(x) + self.conv_block(x)

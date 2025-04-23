@@ -3,7 +3,6 @@ from MySteganoGan.attention import *
 from MySteganoGan.activation_funtion import *
 import torch.nn as nn
 from MySteganoGan.residual_block import ResidualBlock
-from torch.nn.functional import celu
 
 class BasicEncoder(nn.Module):
 
@@ -21,10 +20,7 @@ class BasicEncoder(nn.Module):
         return nn.Sequential(
             self._conv2d(inChannels, self.hiddenSize),
             ACON_C(self.hiddenSize),
-            # nn.CELU(),
             nn.BatchNorm2d(self.hiddenSize),
-            # ChannelAttention(self.hiddenSize),
-            # SpatialAttention(),
             AdaptiveAttention(self.hiddenSize),
         )
 
@@ -35,14 +31,10 @@ class BasicEncoder(nn.Module):
     def _buildModels(self):
         self.features = self._conv2dBlock()#载体图像特征
         self.layers = nn.Sequential(
-            # self._conv2dBlock(self.hiddenSize+self.dataDepth),#载体连接密文后的特征
-            # self._conv2dBlock(self.hiddenSize),
-            # self._conv2dBlock(self.hiddenSize),
             self._residual_block(self.hiddenSize+self.dataDepth,self.hiddenSize),
             self._residual_block(self.hiddenSize,self.hiddenSize),
             self._residual_block(self.hiddenSize, self.hiddenSize),
             self._conv2d(self.hiddenSize, 3),
-            # nn.Tanh(),
         )
         return [self.features, self.layers]
 #------初始化
@@ -61,7 +53,6 @@ class BasicEncoder(nn.Module):
             xList.append(x)
 
         if self.addImage:
-            # x = celu(image + x)
             x = (image + x)
         return x
 
@@ -71,9 +62,6 @@ class ResidualEncoder(BasicEncoder):
     def _buildModels(self):
         self.features = self._conv2dBlock()
         self.layers = nn.Sequential(
-            # self._conv2dBlock(self.hiddenSize + self.dataDepth),  # 载体连接密文后的特征
-            # self._conv2dBlock(self.hiddenSize),
-            # self._conv2dBlock(self.hiddenSize),
             self._residual_block(self.hiddenSize+self.dataDepth,self.hiddenSize),
             self._residual_block(self.hiddenSize,self.hiddenSize),
             self._residual_block(self.hiddenSize,self.hiddenSize),
@@ -90,11 +78,6 @@ class DenseEncoder(BasicEncoder):
         self.conv2 = self._conv2dBlock(self.hiddenSize + self.dataDepth)
         self.conv3 = self._conv2dBlock(self.hiddenSize * 2 + self.dataDepth)
         self.conv4 = self._conv2dBlock(self.hiddenSize * 3 + self.dataDepth)
-
-        # self.conv1 = self._residual_block(3,self.hiddenSize)
-        # self.conv2 = self._residual_block(self.hiddenSize+self.dataDepth,self.hiddenSize)
-        # self.conv3 = self._residual_block(self.hiddenSize*2+self.dataDepth,self.hiddenSize)
-        # self.conv4 = self._residual_block(self.hiddenSize*3+self.dataDepth,self.hiddenSize)
         self.conv5 = nn.Sequential(
             self._conv2d(self.hiddenSize*4+self.dataDepth, 3)
         )
