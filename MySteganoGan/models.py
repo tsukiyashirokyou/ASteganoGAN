@@ -7,7 +7,6 @@ import imageio
 import torch
 from imageio import  imwrite
 from torch.nn.functional import binary_cross_entropy_with_logits, mse_loss
-from torch.optim import AdamW
 from torch.nn.utils import clip_grad_norm_
 from tqdm import tqdm
 from PIL import Image
@@ -173,8 +172,22 @@ class SteganoGAN(object):
 
         return encoderMseLoss, decoderCrossEntropyLoss, decoderAcc
 
+    #评估模式
+    def eval(self):
+        self.encoder.eval()
+        self.decoder.eval()
+        self.critic.eval()
+
+    #训练模式
+    def train(self):
+        self.encoder.train()
+        self.decoder.train()
+        self.critic.train()
+
 #------验证集验证
+    @torch.no_grad()
     def _validate(self, validate, metrics):
+        self.eval()
         for coverImages, _ in tqdm(validate):
             gc.collect()
             coverImages = coverImages.to(self.device)
@@ -183,8 +196,6 @@ class SteganoGAN(object):
                 coverImages, generated, payload, decoded)
             generatedScore = self._critic(generated)
             coverImagesScore = self._critic(coverImages)
-
-
             metrics['val.encoderMseLoss'].append(encoderMseLoss.item())
             metrics['val.decoderCrossEntropyLoss'].append(decoderCrossEntropyLoss.item())
             metrics['val.decoderAcc'].append(decoderAcc.item())
@@ -195,6 +206,8 @@ class SteganoGAN(object):
             metrics['val.psnr'].append(10 * torch.log10(4 / encoderMseLoss).item())
             #bpp=D*(1-2p),p为错误率->bpp=D*(2ACC-1)
             metrics['val.bpp'].append(self.dataDepth * (2 * decoderAcc.item() - 1))
+        self.train()
+
 #------生成样例
     def _generateSamples(self, samplesPath, coverImages, epoch):
         coverImages = coverImages.to(self.device)
@@ -226,7 +239,7 @@ class SteganoGAN(object):
         #------尝试载入过去最好的模型
         bestModelExists = False
         try:
-            bestModel = self.load(path=self.logDir,modelArgsDic=self.modelArgsDic,details=False)
+            bestModel = self.load(path=self.logDir / 'bestModel.pth',modelArgsDic=self.modelArgsDic,details=False)
             bestModelExists = True
         except ValueError:
             pass
@@ -279,7 +292,7 @@ class SteganoGAN(object):
                         flag = True
 
                     self.save(self.logDir / 'bestModel.pth')#保存当前模型
-                    bestModel = self.load(path=self.logDir,modelArgsDic=self.modelArgsDic,details=False)
+                    bestModel = self.load(path=self.logDir / 'bestModel.pth',modelArgsDic=self.modelArgsDic,details=False)
 
                     with (self.logDir / 'bestMetrics.log').open('w') as bestMetricsFile:
                         json.dump(bestModel.history[-1], bestMetricsFile, indent=4)
@@ -318,7 +331,10 @@ class SteganoGAN(object):
 
         coverImage = coverImage.to(self.device)
         payload = payload.to(self.device)
+
+        self.encoder.eval()
         generated = self.encoder(coverImage, payload)[0].clamp(-1.0, 1.0)
+        self.encoder.train()
 
         generated = (generated.permute(2, 1, 0).detach().cpu().numpy() + 1.0) * 127.5
         imwrite(outputImagePath, generated.astype('uint8'))
@@ -334,8 +350,9 @@ class SteganoGAN(object):
         image = torch.FloatTensor(image).permute(2, 1, 0).unsqueeze(0)
         image = image.to(self.device)
 
+        self.decoder.eval()
         image = self.decoder(image).view(-1) > 0
-
+        self.decoder.train()
         # split and decode messages
         candidates = Counter()
         bits = image.detach().cpu().numpy().tolist()
@@ -385,7 +402,8 @@ class SteganoGAN(object):
         if path == None:
             path = Path(__file__).parent.parent / 'bestModel.pth'
         else:
-            path = Path(path) / 'bestModel.pth'
+            path = Path(path) #/ 'bestModel.pth'
+
         if path.exists():
             steganogan = torch.load(path, map_location='cpu',weights_only=False)
 

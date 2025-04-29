@@ -5,7 +5,7 @@ from reedsolo import RSCodec
 from torch.nn.functional import conv2d
 
 
-rs = RSCodec(250)
+rs = RSCodec(128)
 
 
 def textToBits(text):
@@ -30,9 +30,10 @@ def bitsToByteArray(bits):
     ints = []
     for b in range(len(bits) // 8):
         byte = bits[b * 8:(b + 1) * 8]
-        ints.append(int(''.join([str(bit) for bit in byte]), 2))#数字bit转字符串byte
+        # 这里不论 bit 本身是不是 bool，都先转 int，再拼字符串
+        bit_str = ''.join(str(int(bit)) for bit in byte)
+        ints.append(int(bit_str, 2))
     return bytearray(ints)
-
 #------将字符串转换为utf8-bytes，并压缩后添加纠错码
 def textToByteArray(text):
     assert isinstance(text, str), "expected a string"
@@ -41,14 +42,14 @@ def textToByteArray(text):
 
     return x
 
-#------将处理过的字符串流转化回字符串
 def byteArrayToText(x):
     try:
-        text = rs.decode(x)
-        text = zlib.decompress(text)
-        return text.decode("utf-8")
-    except BaseException:
+        decoded_msg, _, _ = rs.decode(x)
+        decompressed = zlib.decompress(bytes(decoded_msg))
+        return decompressed.decode("utf-8")
+    except Exception as e:
         return False
+
 
 
 def first_element(storage, loc):

@@ -20,7 +20,6 @@ class BasicDecoder(nn.Module):
             ACON_C(self.hiddenSize),
             nn.BatchNorm2d(self.hiddenSize),
             AdaptiveAttention(self.hiddenSize),
-
         )
     def _residual_block(self, inChannels, outChannels):
         return ResidualBlock(inChannels,outChannels)

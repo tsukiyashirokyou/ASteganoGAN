@@ -53,7 +53,7 @@ def trainSteganoGAN(model='DenseEncoder',dataDepth=6):
 
     #------模型
     try:
-        steganogan = SteganoGAN.load(path=logDir,modelArgsDic=modelArgsDic)
+        steganogan = SteganoGAN.load(path=logDir / 'bestModel.pth',modelArgsDic=modelArgsDic)
     except ValueError:
         steganogan = SteganoGAN(modelArgsDic=modelArgsDic,**modelArgsDic)
 
